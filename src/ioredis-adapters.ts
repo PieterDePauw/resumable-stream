@@ -7,44 +7,19 @@ import { Publisher, Subscriber } from "./types";
  * @returns A Subscriber interface compatible with the resumable stream
  */
 export function createSubscriberAdapter(client: Redis): Subscriber {
-  // Track all active handlers by channel
-  const handlers: Map<string, (message: string) => void> = new Map();
-
-  // Store reference to the listener for cleanup
-  const messageListener = (channel: string, message: string) => {
-    const handler = handlers.get(channel);
-    if (handler) {
-      handler(message);
-    }
-  };
-
-  return {
-    connect: () => {
-      // ioredis Redis instances are connected by default. Nothing to do.
-      return Promise.resolve();
-    },
-
-    subscribe: async (channel: string, callback: (message: string) => void) => {
-      // Add the global listener on first subscription
-      if (handlers.size === 0) {
-        client.on("message", messageListener);
-      }
-
-      handlers.set(channel, callback);
+  const adapter: Subscriber = {
+    connect: () => client.connect(),
+    subscribe: async function (channel: string, callback: (message: string) => void) {
+      client.on("message", (innerChannel, message) => {
+        if (channel === innerChannel) {
+          callback(message);
+        }
+      });
       await client.subscribe(channel);
     },
-
-    unsubscribe: async (channel: string) => {
-      handlers.delete(channel);
-
-      // Remove the global listener when no more subscriptions
-      if (handlers.size === 0) {
-        client.removeListener("message", messageListener);
-      }
-
-      return client.unsubscribe(channel);
-    },
+    unsubscribe: (channel: string) => client.unsubscribe(channel),
   };
+  return adapter;
 }
 
 /**
@@ -54,10 +29,7 @@ export function createSubscriberAdapter(client: Redis): Subscriber {
  */
 export function createPublisherAdapter(client: Redis): Publisher {
   const adapter: Publisher = {
-    connect: () => {
-      // ioredis Redis instances are connected by default. Nothing to do.
-      return Promise.resolve();
-    },
+    connect: () => client.connect(),
     publish: (channel: string, message: string | Buffer) => client.publish(channel, message),
     set: (key: string, value: string | Buffer, options?: { EX?: number }) => {
       if (options?.EX) {

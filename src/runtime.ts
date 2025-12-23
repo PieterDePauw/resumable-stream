@@ -15,10 +15,9 @@ export function createResumableStreamContextFactory(defaults: _Private.RedisDefa
   return function createResumableStreamContext(
     options: CreateResumableStreamContextOptions
   ): ResumableStreamContext {
-    const waitUntil = options.waitUntil || (async (p) => await p);
     const ctx = {
       keyPrefix: `${options.keyPrefix || "resumable-stream"}:rs`,
-      waitUntil,
+      waitUntil: options.waitUntil,
       subscriber: options.subscriber,
       publisher: options.publisher,
     } as CreateResumableStreamContext;
@@ -283,12 +282,7 @@ export async function resumeStream(
                 try {
                   controller.close();
                 } catch (e) {
-                  // errors can e.g. happen if the stream is already closed
-                  // because the client has disconnected
-                  // ignore them unless we are in debug mode
-                  if (isDebug()) {
-                    console.error(e);
-                  }
+                  console.error(e);
                 }
                 await cleanup();
                 return;
@@ -296,12 +290,7 @@ export async function resumeStream(
               try {
                 controller.enqueue(message);
               } catch (e) {
-                // errors can e.g. happen if the stream is already closed
-                // because the client has disconnected
-                // ignore them unless we are in debug mode
-                if (isDebug()) {
-                  console.error(e);
-                }
+                console.error(e);
                 await cleanup();
               }
             }
@@ -331,12 +320,8 @@ function incrOrDone(publisher: Publisher, key: string): Promise<typeof DONE_VALU
   });
 }
 
-function isDebug() {
-  return process.env.DEBUG;
-}
-
 function debugLog(...messages: unknown[]) {
-  if (isDebug()) {
+  if (process.env.DEBUG || process.env.NODE_ENV === "test") {
     console.log(...messages);
   }
 }

@@ -1,4 +1,4 @@
-[**Resumable Stream v2.2.8**](../README.md)
+[**Resumable Stream v2.2.0**](../README.md)
 
 ***
 
@@ -32,12 +32,18 @@ A pubsub subscriber. Designed to be compatible with clients from the `redis` pac
 
 ***
 
-### waitUntil
+### waitUntil()
 
-> **waitUntil**: `null` \| (`promise`) => `void`
+> **waitUntil**: (`promise`) => `void`
 
-A function that takes a promise and ensures that the current program stays alive
-until the promise is resolved.
+A function that takes a promise and ensures that the current program stays alive until the promise is resolved.
 
-If you are deploying to a server environment, where you don't have to worry about
-the function getting suspended, pass in null.
+#### Parameters
+
+##### promise
+
+`Promise`\<`unknown`\>
+
+#### Returns
+
+`void`

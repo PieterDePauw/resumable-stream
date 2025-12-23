@@ -6,13 +6,9 @@ export interface CreateResumableStreamContextOptions {
    */
   keyPrefix?: string;
   /**
-   * A function that takes a promise and ensures that the current program stays alive
-   * until the promise is resolved.
-   *
-   * If you are deploying to a server environment, where you don't have to worry about
-   * the function getting suspended, pass in null.
+   * A function that takes a promise and ensures that the current program stays alive until the promise is resolved.
    */
-  waitUntil: ((promise: Promise<unknown>) => void) | null;
+  waitUntil: (promise: Promise<unknown>) => void;
   /**
    * A pubsub subscriber. Designed to be compatible with clients from the `redis` package.
    */
